@@ -1,0 +1,161 @@
+import java.sql.*;
+import java.util.Scanner;
+
+public class ProductCRUD {
+    private static final String DB_URL = "jdbc:sqlite:store.db";
+
+    // Create Table
+    public static void createTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS Product (" +
+                     "ProductID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                     "ProductName TEXT NOT NULL, " +
+                     "Price REAL NOT NULL, " +
+                     "Quantity INTEGER NOT NULL)";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(sql);
+            System.out.println("✅ Table ensured.");
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    // Insert Product
+    public static void insertProduct(String name, double price, int quantity) {
+        String sql = "INSERT INTO Product (ProductName, Price, Quantity) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            pstmt.setString(1, name);
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, quantity);
+            pstmt.executeUpdate();
+            conn.commit();
+            System.out.println("✅ Product added successfully!");
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    // Fetch Products
+    public static void fetchProducts() {
+        String sql = "SELECT * FROM Product";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            System.out.println("\n📦 Product List:");
+            while (rs.next()) {
+                System.out.printf("ID: %d | Name: %s | Price: $%.2f | Quantity: %d%n",
+                        rs.getInt("ProductID"),
+                        rs.getString("ProductName"),
+                        rs.getDouble("Price"),
+                        rs.getInt("Quantity"));
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    // Update Product
+    public static void updateProduct(int id, String name, double price, int quantity) {
+        String sql = "UPDATE Product SET ProductName=?, Price=?, Quantity=? WHERE ProductID=?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            pstmt.setString(1, name);
+            pstmt.setDouble(2, price);
+            pstmt.setInt(3, quantity);
+            pstmt.setInt(4, id);
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                conn.commit();
+                System.out.println("✅ Product updated successfully!");
+            } else {
+                System.out.println("⚠️ Product not found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    // Delete Product
+    public static void deleteProduct(int id) {
+        String sql = "DELETE FROM Product WHERE ProductID=?";
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            pstmt.setInt(1, id);
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                conn.commit();
+                System.out.println("✅ Product deleted successfully!");
+            } else {
+                System.out.println("⚠️ Product not found.");
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error: " + e.getMessage());
+        }
+    }
+
+    // Menu-driven program
+    public static void menu() {
+        createTable();
+        Scanner scanner = new Scanner(System.in);
+        
+        while (true) {
+            System.out.println("\n📌 Product Management System");
+            System.out.println("1️⃣ Add Product");
+            System.out.println("2️⃣ View Products");
+            System.out.println("3️⃣ Update Product");
+            System.out.println("4️⃣ Delete Product");
+            System.out.println("5️⃣ Exit");
+            System.out.print("Enter your choice: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter product name: ");
+                    String name = scanner.nextLine();
+                    System.out.print("Enter product price: ");
+                    double price = scanner.nextDouble();
+                    System.out.print("Enter product quantity: ");
+                    int quantity = scanner.nextInt();
+                    insertProduct(name, price, quantity);
+                    break;
+                case 2:
+                    fetchProducts();
+                    break;
+                case 3:
+                    System.out.print("Enter Product ID to update: ");
+                    int updateId = scanner.nextInt();
+                    scanner.nextLine();
+                    System.out.print("Enter new product name: ");
+                    String newName = scanner.nextLine();
+                    System.out.print("Enter new price: ");
+                    double newPrice = scanner.nextDouble();
+                    System.out.print("Enter new quantity: ");
+                    int newQuantity = scanner.nextInt();
+                    updateProduct(updateId, newName, newPrice, newQuantity);
+                    break;
+                case 4:
+                    System.out.print("Enter Product ID to delete: ");
+                    int deleteId = scanner.nextInt();
+                    deleteProduct(deleteId);
+                    break;
+                case 5:
+                    System.out.println("🔴 Exiting... Have a great day!");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("⚠️ Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    // Main method
+    public static void main(String[] args) {
+        menu();
+    }
+}
